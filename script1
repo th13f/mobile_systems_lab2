@@ -1,0 +1,62 @@
+#!/bin/sh
+if	[ "--help" = "$1" ]
+	then 
+	echo '\n	--help показать эту справку и выйти \n Скрипт выводит прогноз погоды на завтра через заданный интервал времени, который можно изменить в config.ini'
+else
+	interval=$(sed -n 's/.*interval *= *\([^ ]*.*\)/\1/p' < ./config.ini)
+	echo "Interval between weather forecast messages is set to $interval seconds"	
+	echo
+	if ping -c1 informer.gismeteo.ru > /dev/null
+		then
+		while true
+			do
+			rm -rf ./tmp
+			mkdir ./tmp
+			cd tmp
+			wget informer.gismeteo.ru/rss/26850.xml -q
+
+			echo 'Минск, завтра:'
+			echo '\n'
+
+			#Morning
+			WEATHER=`cat ./26850.xml | grep -A 2 "Минск: Утро" | tail -n 1`
+			WEATHER=$(echo $WEATHER | sed 's/<description>//')
+			WEATHER=$(echo $WEATHER | sed 's/<\/description>//')
+			echo 'Утро:'
+			echo  "$WEATHER"
+			echo 
+
+			#Day
+			WEATHER=`cat ./26850.xml | grep -A 2 "Минск: День" | tail -n 1`
+			WEATHER=$(echo $WEATHER | sed 's/<description>//')
+			WEATHER=$(echo $WEATHER | sed 's/<\/description>//')
+			echo 'День:'
+			echo  "$WEATHER"
+			echo 
+
+			#Evening
+			WEATHER=`cat ./26850.xml | grep -A 2 "Минск: Вечер" | tail -n 1`
+			WEATHER=$(echo $WEATHER | sed 's/<description>//')
+			WEATHER=$(echo $WEATHER | sed 's/<\/description>//')
+			echo 'Вечер:'
+			echo  "$WEATHER"
+			echo 
+
+			#Night
+			WEATHER=`cat ./26850.xml | grep -A 2 "Минск: Ночь" | tail -n 1`
+			WEATHER=$(echo $WEATHER | sed 's/<description>//')
+			WEATHER=$(echo $WEATHER | sed 's/<\/description>//')
+			echo 'Ночь:'
+			echo  "$WEATHER"
+			echo "-------------------------"
+			
+			cd ..
+			rm -rf tmp
+			sleep $interval
+		done
+	else
+	echo "connection problems"
+	fi
+	
+fi
+return 0
